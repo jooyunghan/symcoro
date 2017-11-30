@@ -1,4 +1,4 @@
-const coro = require("./coro");
+const coro = require("coro");
 
 const produce = coro.create(function* produce() {
   for (let i = 0; i < 100; i++) {

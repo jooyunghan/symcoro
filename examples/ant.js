@@ -1,4 +1,4 @@
-const coro = require("./coro");
+const coro = require("coro");
 
 function* ant(n, next) {
   if (n == 0) {
