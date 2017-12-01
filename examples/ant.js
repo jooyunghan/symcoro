@@ -44,13 +44,13 @@ function ant(n, m, cb) {
   }, cb);
 }
 
-ant(100000, 100000, console.log);
+ant(1000000, 1000000, console.log);
 
 /**
  * exercises
  *
- * #1 ant() is quite big. Extract init() and process().
- *    init() produces [1].
- *    process(prev,next) processes input from prev and produces output to next
+ * #1 `antCo()` is quite big. Extract `init()` and `process()`.
+ *    - `init()` produces `[1]`.
+ *    - `process(prev,next)` reads from `prev` and writes output to `next`.
  * #2 Extract `forEach(co, f)` from duplicated code for consuming output from a coroutine
  */

@@ -84,6 +84,7 @@ coro.transfer = function* transfer(co, val) {
     coro.current = co;
     coro.parent = co.parent;
     if (co === coro.main) {
+      // TODO adjust yield frequency
       // yield to avoid cpu-intensive loop
       // this `yield` will cause `process.nextTick` to resume
       yield;
@@ -98,20 +99,19 @@ coro.transfer = function* transfer(co, val) {
 
 /**
  * run until main coroutine `f` finishes
+ * TODO replace setImmediate to other
  *
  * @param {GeneratorFunction} f
  * @param {function} callback
  */
 coro.run = function run(f, callback = noop) {
   function loop(g, callback) {
-    // while (true) {
       const { value, done } = g.next();
       if (done) {
         return setImmediate(callback, value);
       } else {
         return setImmediate(loop, g, callback);
       }
-    // }
   }
   loop(f(), callback);
 };
