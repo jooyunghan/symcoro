@@ -1,8 +1,9 @@
 {
-  "name": "coro",
+  "name": "coro-js",
   "version": "1.0.0",
   "description": "Symmetric coroutines library",
   "main": "src/coro.js",
   "author": "Jooyung Han <jooyung.han@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {}
 }

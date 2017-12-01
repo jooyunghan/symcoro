@@ -1,17 +1,20 @@
 const coro = require("coro");
 
-function* ant(n, next) {
+function* antCo(n) {
+  const next = coro.parent;
+
   if (n == 0) {
     yield* coro.transfer(next, 1);
-    yield* coro.transfer(next, null);
-    return;
+    yield* coro.transfer(next, 0); // 0 means "end of stream"
+    throw new Error("not reach here ");
   }
-  const prev = coro.create(ant, n - 1, coro.current);
-  let prevItem = yield* coro.transfer(prev);
+
+  const prev = coro.create(antCo, `ant(${n - 1})`);
+  let prevItem = yield* coro.transfer(prev, n - 1);
   let count = 1;
   while (true) {
     const item = yield* coro.transfer(prev);
-    if (item === null) {
+    if (item === 0) {
       break;
     } else if (item === prevItem) {
       count++;
@@ -24,18 +27,24 @@ function* ant(n, next) {
   }
   yield* coro.transfer(next, count);
   yield* coro.transfer(next, prevItem);
-  yield* coro.transfer(next, null);
+  yield* coro.transfer(next, 0);
+  throw new Error("not reach here ");
 }
 
-coro.run(function*() {
-  const ant10 = coro.create(ant, 10, coro.current);
-  while (true) {
-    const item = yield* coro.transfer(ant10);
-    if (item === null) break;
-    console.log(item);
-  }
-  yield* coro.transfer(coro.main);
-});
+function ant(n, m, cb) {
+  coro.run(function*() {
+    const ant = coro.create(antCo);
+    let item = yield* coro.transfer(ant, n);
+    let i = 0;
+    while (item > 0) {
+      if (i++ === m) break;
+      item = yield* coro.transfer(ant);
+    }
+    return item;
+  }, cb);
+}
+
+ant(100000, 100000, console.log);
 
 /**
  * exercises

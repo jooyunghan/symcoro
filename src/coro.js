@@ -1,69 +1,120 @@
 // inspired by Lua `coro` library
+
 const debug = require("util").debuglog("coro");
-const is = require("./is");
 
 const coro = {};
+
+const noop = () => {};
 
 /**
  * marker object for main coroutine
  */
-coro.main = (function* main() {})();
+coro.main = {
+  ctor: "coroutine",
+  name: "main",
+};
 
 /**
  * currently active coroutine
  */
 coro.current = coro.main;
 
-/**
- * run until main coroutine `co` finishes
- *
- * @param {GeneratorFunction} co
- */
-coro.run = function run(co) {
-  if (!is.generatorFunction(co)) {
-    throw new Error("run: coroutine should be a GeneratorFunction");
-  }
-  for (const s of co()) {
-  }
+function resume0(val) {
+  this.resume = resume1;
+  this.g = this.f(val);
+  delete this.f;
+  // we use generator-return-value
+  // by not checking 'done' field
+  return this.g.next().value;
+}
+
+function resume1(val) {
+  // we use generator-return-value
+  // by not checking 'done' field
+  return this.g.next(val).value;
 }
 
 /**
  * create a coroutine as suspended
  *
- * @param {GeneratorFunction} co
+ * @param {GeneratorFunction} f
+ * @param {string?} name
+ * @returns Coroutine
  */
-coro.create = function create(co, ...args) {
-  if (!is.generatorFunction(co)) {
-    throw new Error("create: coroutine should be a GeneratorFunction");
-  }
-  debug(`create ${co.name}`);
-  const g = co(...args);
-  const str = args.length > 1 ? `${args[0]},...` : args[0] || "";
-  g.name = `${co.name || "(anonymous)"}(${str})`;
-  return g;
+coro.create = function create(f, name = f.name) {
+  debug(`[${coro.current.name}] create(${name})`);
+  return {
+    ctor: "coroutine",
+    f,
+    name,
+    resume: resume0,
+    parent: coro.current,
+  };
 };
+
+/**
+ * @private
+ * transfer() uses this to pass multiple values between yield/resume
+ */
+const deaddrop = {};
 
 /**
  * transfer to other coroutine `co` with value.
  *
- * @param {Generator} co
+ * @param {Coroutine} co
  * @param {*} val
  */
 coro.transfer = function* transfer(co, val) {
-  if (!is.generator(co)) {
-    throw new Error("transfer: 'co' should be a coroutine.", co);
+  if (co.ctor !== "coroutine") {
+    throw new TypeError(`${co} is not a coroutine.`);
   }
-  debug(`[${coro.current.name}]: transfer to ${co.name} with val=${val}`);
+  debug(`[${coro.current.name}] transfer(${co.name},${val})`);
+
   if (coro.current !== coro.main) {
-    return yield [co, val];
+    // for performance
+    // use global deaddrop to return multiple values
+    // otherwise `yield [co, val]`
+    //       and `[co,val] = co.resume(val)`
+    //       will be fine.
+    deaddrop.next = co;
+    deaddrop.val = val;
+    return yield;
   }
+
   while (true) {
     coro.current = co;
+    coro.parent = co.parent;
     if (co === coro.main) {
+      // yield to avoid cpu-intensive loop
+      // this `yield` will cause `process.nextTick` to resume
+      yield;
+
       return val;
     }
-    [co, val] = co.next(val).value;
+    co.resume(val);
+    co = deaddrop.next;
+    val = deaddrop.val;
   }
+};
+
+/**
+ * run until main coroutine `f` finishes
+ *
+ * @param {GeneratorFunction} f
+ * @param {function} callback
+ */
+coro.run = function run(f, callback = noop) {
+  function loop(g, callback) {
+    while (true) {
+      const { value, done } = g.next();
+      if (done) {
+        return setImmediate(callback, value);
+      } else {
+        return setImmediate(loop, g, callback);
+      }
+    }
+  }
+  loop(f(), callback);
 };
 
 module.exports = coro;
