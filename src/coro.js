@@ -105,14 +105,14 @@ coro.transfer = function* transfer(co, val) {
  */
 coro.run = function run(f, callback = noop) {
   function loop(g, callback) {
-    while (true) {
+    // while (true) {
       const { value, done } = g.next();
       if (done) {
         return setImmediate(callback, value);
       } else {
         return setImmediate(loop, g, callback);
       }
-    }
+    // }
   }
   loop(f(), callback);
 };
