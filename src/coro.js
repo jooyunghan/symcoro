@@ -21,17 +21,16 @@ coro.current = coro.main;
 
 function resume0(val) {
   this.resume = resume1;
-  this.g = this.f(val);
-  delete this.f;
+  this.f = this.f(val);
   // we use generator-return-value
   // by not checking 'done' field
-  return this.g.next().value;
+  return this.f.next().value;
 }
 
 function resume1(val) {
   // we use generator-return-value
   // by not checking 'done' field
-  return this.g.next(val).value;
+  return this.f.next(val).value;
 }
 
 /**
