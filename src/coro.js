@@ -1,6 +1,6 @@
 // inspired by Lua `coro` library
 
-const debug = require("util").debuglog("coro");
+const debug = require("debug")("coro-js");
 
 const coro = {};
 
