@@ -1,4 +1,4 @@
-const coro = require("coro");
+const coro = require("coro-js");
 
 function* antCo(n) {
   const next = coro.parent;
