@@ -1,10 +1,11 @@
 {
-  "name": "coro-js",
+  "name": "symcoro",
   "version": "1.0.0",
   "description": "Symmetric coroutines library",
   "main": "src/coro.js",
   "author": "Jooyung Han <jooyung.han@gmail.com>",
   "license": "MIT",
+  "repository": "jooyunghan/symcoro",
   "dependencies": {
     "debug": "^3.1.0"
   }

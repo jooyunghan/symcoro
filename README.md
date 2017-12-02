@@ -7,7 +7,7 @@ This is a JS-port of 'coro' library from *"Revisiting Coroutines"* (Ana Lúcia d
 Simple example for Producer/Consumer
 
 ```javascript
-const coro = require("coro-js");
+const coro = require("symcoro");
 
 const produce = coro.create(function* produce(n) {
   yield* coro.transfer(consume, n * 3);

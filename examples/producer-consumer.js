@@ -1,4 +1,4 @@
-const coro = require("coro-js");
+const coro = require("symcoro");
 
 const END = {};
 
