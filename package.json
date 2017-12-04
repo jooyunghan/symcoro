@@ -1,6 +1,6 @@
 {
   "name": "symcoro",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Symmetric coroutines library",
   "main": "src/coro.js",
   "author": "Jooyung Han <jooyung.han@gmail.com>",
