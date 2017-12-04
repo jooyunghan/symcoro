@@ -55,8 +55,7 @@ coro.create = function create(f, name = f.name) {
  * @private
  * transfer() uses this to pass multiple values between yield/resume
  */
-const deaddrop = {};
-
+const TRANSFER = {type: "transfer"};
 /**
  * transfer to other coroutine `co` with value.
  *
@@ -70,14 +69,9 @@ coro.transfer = function* transfer(co, val) {
   debug(`[${coro.current.name}] transfer(${co.name},${val})`);
 
   if (coro.current !== coro.main) {
-    // for performance
-    // use global deaddrop to return multiple values
-    // otherwise `yield [co, val]`
-    //       and `[co,val] = co.resume(val)`
-    //       will be fine.
-    deaddrop.next = co;
-    deaddrop.val = val;
-    return yield;
+    TRANSFER.next = co;
+    TRANSFER.val = val;
+    return yield TRANSFER;
   }
 
   while (true) {
@@ -91,9 +85,14 @@ coro.transfer = function* transfer(co, val) {
 
       return val;
     }
-    co.resume(val);
-    co = deaddrop.next;
-    val = deaddrop.val;
+    const value = co.resume(val);
+    if (value === TRANSFER) {
+      co = TRANSFER.next;
+      val = TRANSFER.val;
+    } else {
+      val = yield value;
+    }
+    
   }
 };
 
@@ -105,12 +104,14 @@ coro.transfer = function* transfer(co, val) {
  * @param {function} callback
  */
 coro.run = function run(f, callback = noop) {
-  function loop(g, callback) {
-      const { value, done } = g.next();
+  function loop(g, callback, previousValue) {
+      const { value, done } = g.next(previousValue);
       if (done) {
-        return setImmediate(callback, value);
+        setImmediate(callback, value);
+      } else if (value && typeof value.then === "function") {
+        value.then(v => loop(g, callback, v), e => console.log("error:", e))
       } else {
-        return setImmediate(loop, g, callback);
+        setImmediate(loop, g, callback);
       }
   }
   loop(f(), callback);
